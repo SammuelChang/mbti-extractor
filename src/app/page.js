@@ -56,9 +56,9 @@ export default function Home() {
 
   return (
     <main className="h-dvh flex flex-col items-center justify-start p-12 mt-12">
-       <section class="text-center flex flex-col justify-center mb-12">
-          <h1 class="text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">MBTI Detecter</h1>
-          <p class="mt-8 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">Get your MBTI with few words about yourself</p>
+       <section className="text-center flex flex-col justify-center mb-12">
+          <h1 className="text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">MBTI Detecter</h1>
+          <p className="mt-8 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">Get your MBTI with few words about yourself</p>
           <h1 className="text-5xl font-bold mb-8 text-center"></h1>
           <form className='flex gap-2 items-center mb-4' onSubmit={submitHandler}>
             <Input
