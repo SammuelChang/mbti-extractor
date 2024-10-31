@@ -1,44 +1,71 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { getSimilarity, getTranslatedText } from './services'
+
+function isContainChinese(text) {
+  const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+
+  if (chineseCount > 0) {
+    return true;
+  }
+
+  return false
+}
 
 export default function Home() {
-
-  // Keep track of the classification result and the model loading status.
   const [result, setResult] = useState(null);
   const [ready, setReady] = useState(null);
+  const [pending, startTransition] = useTransition();
 
-  const classify = async (text) => {
-    if (!text) return;
-    if (ready === null) setReady(false);
+  const getData =  (text) => {
+    startTransition(async() => {
+      if (!text) return;
+      if (ready === null) setReady(false);
+      if (!ready) setReady(true);
 
-    // Make a request to the /classify route on the server.
-    const result = await fetch(`/classify?text=${encodeURIComponent(text)}`);
+      const isChinese = isContainChinese(text);
 
-    // If this is the first time we've made a request, set the ready flag.
-    if (!ready) setReady(true);
-
-    const json = await result.json();
-    setResult(json);
+      if (isChinese) {
+        const translatedText = await getTranslatedText(text);
+        const result = await getSimilarity(translatedText);
+        setResult(result);
+      } else {
+        const result = await getSimilarity(text);
+        setResult(result);
+      }
+    });
   };
+
+  function submitHandler(e) {
+    e.preventDefault();
+    const inputValue = e.target.elements.inputField.value;
+    getData(inputValue);
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-12">
-      <h1 className="text-5xl font-bold mb-2 text-center">Transformers.js</h1>
-      <h2 className="text-2xl mb-4 text-center">Next.js template (server-side)</h2>
-      <input
-        type="text"
-        className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
-        placeholder="Enter text here"
-        onInput={e => {
-          classify(e.target.value);
-        }}
-      />
-
+      <h1 className="text-5xl font-bold mb-8 text-center">MBTI Detecter</h1>
+      <form className='flex gap-2 items-center mb-4' onSubmit={submitHandler}>
+        <input
+          type="text"
+          id="inputField"
+          className="w-full max-w-xs p-2 border border-gray-300 rounded"
+          placeholder="Enter text here"
+          autoComplete='off'
+        />
+        <button type="submit" className='border p-1 bg-black text-white rounded-md'>Submit</button>
+      </form>
+      <div>{pending ? 'loading' : ''}</div>
       {ready !== null && (
-        <pre className="bg-gray-100 p-2 rounded">
-          {
-            (!ready || !result) ? 'Loading...' : JSON.stringify(result, null, 2)}
-        </pre>
+        <div>
+          {ready && result?.similarResults?.slice(0,3).map((item, index) => 
+            <div key={index} className="mb-4 flex items-center">
+              <div className="text-xl font-bold">{index + 1}：{item.type}</div>
+              <div>（{Math.ceil(item.similarity*100)}%）</div>
+            </div>
+          )}
+        </div>
       )}
     </main>
   )
