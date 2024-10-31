@@ -29,14 +29,11 @@ const Spinner = () => {
 
 export default function Home() {
   const [result, setResult] = useState(null);
-  const [ready, setReady] = useState(null);
   const [pending, startTransition] = useTransition();
 
   const getData =  (text) => {
     startTransition(async() => {
       if (!text) return;
-      if (ready === null) setReady(false);
-      if (!ready) setReady(true);
 
       const isChinese = isContainChinese(text);
 
@@ -76,9 +73,9 @@ export default function Home() {
         </section>
         <section>
           {pending && <Spinner />}
-          {!pending && ready !== null && (
+          {!pending && (
             <div>
-              {ready && result?.similarResults?.slice(0,3).map((item, index) => 
+              {result?.similarResults?.slice(0,3).map((item, index) => 
                 <div key={index} className="mb-4 flex items-center">
                   <div className="text-xl font-bold">{index + 1}：{item.type}</div>
                   <div>（{Math.ceil(item.similarity*100)}%）</div>
