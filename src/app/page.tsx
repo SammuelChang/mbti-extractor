@@ -99,7 +99,7 @@ export default function Home() {
                 <div className="text-xl font-bold">
                   {index + 1}：{item.type}
                 </div>
-                <div>（{Math.ceil(item.similarity * 100)}%）</div>
+                <div>（{item?.percentage}%）</div>
               </div>
             ))}
           </div>

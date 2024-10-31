@@ -6,6 +6,7 @@ export interface IMbti {
 export interface IMbtiAnalysis {
   type: string;
   similarity: number;
+  percentage: number;
 }
 
 export interface ISimilarity {
