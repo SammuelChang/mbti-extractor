@@ -41,7 +41,10 @@ export async function sentenceExtractor(
 
     const firstEmbedding = embeddings[0];
     const similarResults = references.map((sentence, index) => {
-      const similarity = cosineSimilarity(firstEmbedding, embeddings[index]);
+      const similarity = cosineSimilarity(
+        firstEmbedding,
+        embeddings[index + 1]
+      );
       return {
         type: sentence.type,
         similarity: similarity,
