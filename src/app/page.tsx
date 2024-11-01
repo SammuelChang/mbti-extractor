@@ -5,6 +5,7 @@ import { getSimilarity, getTranslatedText } from "./services";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ISimilarity } from "../../interface";
+import Image from "next/image";
 
 function isContainChinese(text: string) {
   const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
@@ -76,8 +77,8 @@ export default function Home() {
   }
 
   return (
-    <main className="h-dvh flex flex-col items-center justify-start p-12 mt-12">
-      <section className="text-center flex flex-col justify-center mb-12">
+    <main className="h-dvh flex flex-col items-center justify-start pt-12 pb-24">
+      <section className="text-center flex flex-col justify-center mb-24">
         <h1 className="text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">
           MBTI Detecter
         </h1>
@@ -100,13 +101,19 @@ export default function Home() {
       <section>
         {pending && <Spinner />}
         {!pending && (
-          <div>
+          <div className="flex gap-8 p-4 flex-col md:flex-row">
             {result?.similarResults?.slice(0, 3).map((item, index) => (
-              <div key={index} className="mb-4 flex items-center">
-                <div className="text-xl font-bold">
-                  {index + 1}：{item.type}
+              <div key={index} className="mb-4 flex flex-col">
+                <div className="flex gap-1 justify-center">
+                  <div className="text-xl font-bold">{item.type}</div>
+                  <div className="w-3/12">（{item?.percentage}%）</div>
                 </div>
-                <div>（{item?.percentage}%）</div>
+                <Image
+                  src={`/mbti/${item.type.toUpperCase()}.png`}
+                  width={150}
+                  height={150}
+                  alt={item.type}
+                />
               </div>
             ))}
           </div>
