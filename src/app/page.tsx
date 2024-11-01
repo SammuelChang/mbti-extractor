@@ -40,25 +40,31 @@ const Spinner = () => {
   );
 };
 
+type IProgress = "idle" | "translating" | "extract" | "success" | "error";
+
 export default function Home() {
   const [result, setResult] = useState<null | ISimilarity>(null);
-  const [pending, startTransition] = useTransition();
+  const [progress, setProgress] = useState<IProgress>("idle");
+  const pending = progress === "translating" || progress === "extract";
 
-  const getData = (text: string) => {
-    startTransition(async () => {
-      if (!text) return;
+  const getData = async (text: string) => {
+    if (!text) return;
 
-      const isChinese = isContainChinese(text);
+    const isChinese = isContainChinese(text);
 
-      if (isChinese) {
-        const translatedText = await getTranslatedText(text);
-        const result = await getSimilarity(translatedText);
-        setResult(result);
-      } else {
-        const result = await getSimilarity(text);
-        setResult(result);
-      }
-    });
+    if (isChinese) {
+      setProgress("translating");
+      const translatedText = await getTranslatedText(text);
+      setProgress("extract");
+      const result = await getSimilarity(translatedText);
+      setResult(result);
+      setProgress("success");
+    } else {
+      setProgress("extract");
+      const result = await getSimilarity(text);
+      setResult(result);
+      setProgress("success");
+    }
   };
 
   function submitHandler(e: React.FormEvent<HTMLFormElement>) {
@@ -84,11 +90,12 @@ export default function Home() {
             type="text"
             id="inputField"
             className="w-full max-w-xs p-2 border border-gray-300 rounded"
-            placeholder="Enter text here"
+            placeholder="Enter text here in English or 繁體中文"
             autoComplete="off"
           />
           <Button type="submit">Submit</Button>
         </form>
+        <div>progress: {progress}</div>
       </section>
       <section>
         {pending && <Spinner />}
