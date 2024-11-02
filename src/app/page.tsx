@@ -9,6 +9,7 @@ import Image from "next/image";
 import ImagesReveal from "./components/images-reveal";
 import { mbtiList } from "../../data";
 import { motion } from "framer-motion";
+import { WavyBackground } from "@/components/animata/image/wavy-background";
 
 const cards = mbtiList.map((item, index) => {
   return {
@@ -30,10 +31,10 @@ function isContainChinese(text: string) {
 
 const Spinner = () => {
   return (
-    <div role="status">
+    <div role="status" className="mt-1">
       <svg
         aria-hidden="true"
-        className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-black"
+        className="w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-black"
         viewBox="0 0 100 101"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -96,30 +97,37 @@ export default function Home() {
 
   return (
     <main className="h-dvh flex flex-col items-center justify-start pt-12 pb-24">
-      <section className="text-center flex flex-col justify-center mb-24">
-        <h1 className="text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">
+      <WavyBackground className="max-w-4xl mx-auto">
+        <p className="text-2xl md:text-4xl lg:text-7xl font-bold inter-var text-center">
           MBTI Detecter
-        </h1>
-        <p className="mt-8 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">
+        </p>
+        <p className="text-base md:text-lg mt-4 font-normal inter-var text-center mb-12">
           Get your MBTI with few words about yourself
         </p>
-        <h1 className="text-5xl font-bold mb-8 text-center"></h1>
-        <form className="flex gap-2 items-center mb-4" onSubmit={submitHandler}>
+        <form
+          className="flex gap-2 items-center mb-4 z-10 flex-col md:flex-row md:justify-center"
+          onSubmit={submitHandler}
+        >
           <Input
             type="text"
             id="inputField"
-            className="w-full max-w-xs p-2 border border-gray-300 rounded"
-            placeholder="Enter text here in English or 繁體中文"
+            className="w-48 max-w-xs p-2 border border-gray-300 rounded"
+            placeholder="Text in English or 繁體中文"
             autoComplete="off"
           />
+
           <Button type="submit">Submit</Button>
         </form>
-        <div>progress: {progress}</div>
-      </section>
-      <section>
-        {pending && <Spinner />}
+        {pending && (
+          <div className="flex h-8 w-full gap-2 items-center justify-center">
+            <Spinner />
+            <div>progress: {progress}</div>
+          </div>
+        )}
+      </WavyBackground>
+      <section className="mt-12">
         {!pending && (
-          <div className="flex gap-8 p-4 flex-col md:flex-row">
+          <div className="flex gap-8 p-4 flex-wrap justify-center">
             {result?.similarResults?.slice(0, 3).map((item, index) => (
               <div key={index} className="relative">
                 <motion.div
