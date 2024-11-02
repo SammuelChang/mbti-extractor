@@ -145,3 +145,12 @@ export const mbtiTraitList: IMbtiCatrgory[] = [
     ],
   },
 ];
+
+export const placeholderList = [
+  "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
+  "Thrive in social settings, imagine possibilities, focus on harmony, and stay open to spontaneity.",
+  "Enjoy one-on-one talks, find patterns, balance empathy with logic, and adapt easily to changes.",
+  "喜愛安靜時光，重視細節，偏好理性分析，並享受有計劃的安排。",
+  "社交活力滿滿，愛幻想未來，重視人際和諧，享受隨機應變的生活。",
+  "喜愛深度對話，注重全局，兼顧理性與感性，樂於接受變化。",
+];
