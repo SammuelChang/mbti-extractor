@@ -6,6 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ISimilarity } from "../../interface";
 import Image from "next/image";
+import ImagesReveal from "./components/images-reveal";
+import { mbtiList } from "../../data";
+import { motion } from "framer-motion";
+
+const cards = mbtiList.map((item, index) => {
+  return {
+    src: `/mbti/${item.type.toUpperCase()}.png`,
+    type: item.type.toUpperCase(),
+    angle: `${Math.random() * 30 - 15}deg`,
+  };
+});
 
 function isContainChinese(text: string) {
   const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
@@ -47,6 +58,9 @@ export default function Home() {
   const [result, setResult] = useState<null | ISimilarity>(null);
   const [progress, setProgress] = useState<IProgress>("idle");
   const pending = progress === "translating" || progress === "extract";
+  const sortedResult = result?.similarResults?.sort(
+    (a, b) => b.percentage - a.percentage
+  );
 
   const getData = async (text: string) => {
     if (!text) return;
@@ -58,13 +72,17 @@ export default function Home() {
       const translatedText = await getTranslatedText(text);
       setProgress("extract");
       const result = await getSimilarity(translatedText);
-      setResult(result);
-      setProgress("success");
+      setTimeout(() => {
+        setResult(result);
+        setProgress("success");
+      }, 500);
     } else {
       setProgress("extract");
       const result = await getSimilarity(text);
-      setResult(result);
-      setProgress("success");
+      setTimeout(() => {
+        setResult(result);
+        setProgress("success");
+      }, 500);
     }
   };
 
@@ -103,19 +121,41 @@ export default function Home() {
         {!pending && (
           <div className="flex gap-8 p-4 flex-col md:flex-row">
             {result?.similarResults?.slice(0, 3).map((item, index) => (
-              <div key={index} className="mb-4 flex flex-col">
-                <div className="flex gap-1 justify-center">
-                  <div className="text-xl font-bold">{item.type}</div>
-                  <div className="w-3/12">（{item?.percentage}%）</div>
-                </div>
-                <Image
-                  src={`/mbti/${item.type.toUpperCase()}.png`}
-                  width={150}
-                  height={150}
-                  alt={item.type}
-                />
+              <div key={index} className="relative">
+                <motion.div
+                  className="relative"
+                  initial="hidden"
+                  animate="visible"
+                  whileHover={{
+                    scale: 1,
+                    rotate: "5deg",
+                    zIndex: 10,
+                    transition: {
+                      duration: 0.3,
+                      type: "spring",
+                      stiffness: 150,
+                      damping: 20,
+                    },
+                  }}
+                >
+                  {/* Type Label */}
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform">
+                    <span className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
+                      {item.type}&nbsp;({item.percentage}%)
+                    </span>
+                  </div>
+
+                  <Image
+                    className="size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
+                    src={`/mbti/${item.type.toUpperCase()}.png`}
+                    alt={item.type}
+                    width={150}
+                    height={150}
+                  />
+                </motion.div>
               </div>
             ))}
+            {!result && <ImagesReveal cards={cards} />}
           </div>
         )}
       </section>
