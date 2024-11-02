@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { getSimilarity, getTranslatedText } from "./services";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ISimilarity } from "../../interface";
 import Image from "next/image";
@@ -105,11 +105,10 @@ export default function Home() {
           Get your MBTI with few words about yourself
         </p>
         <form
-          className="flex gap-2 items-center mb-4 z-10 flex-col md:flex-row md:justify-center"
+          className="flex gap-2 items-center mb-4 z-10 flex-col"
           onSubmit={submitHandler}
         >
-          <Input
-            type="text"
+          <Textarea
             id="inputField"
             className="w-48 max-w-xs p-2 border border-gray-300 rounded"
             placeholder="Text in English or 繁體中文"
