@@ -115,14 +115,22 @@ export default function Home() {
             autoComplete="off"
           />
 
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={pending} className="w-48">
+            {!pending && "Submit"}
+            {progress === "translating" && (
+              <>
+                <Spinner />
+                Translating...
+              </>
+            )}
+            {progress === "extract" && (
+              <>
+                <Spinner />
+                Extracting...
+              </>
+            )}
+          </Button>
         </form>
-        {pending && (
-          <div className="flex h-8 w-full gap-2 items-center justify-center">
-            <Spinner />
-            <div>progress: {progress}</div>
-          </div>
-        )}
       </WavyBackground>
       <section className="mt-12">
         {!pending && (
