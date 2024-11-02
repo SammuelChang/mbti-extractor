@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { getSimilarity, getTranslatedText } from "./services";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -53,11 +53,21 @@ const Spinner = () => {
   );
 };
 
+const placeholderText = [
+  "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
+  "Thrive in social settings, imagine possibilities, focus on harmony, and stay open to spontaneity.",
+  "Enjoy one-on-one talks, find patterns, balance empathy with logic, and adapt easily to changes.",
+  "喜愛安靜時光，重視細節，偏好理性分析，並享受有計劃的安排。",
+  "社交活力滿滿，愛幻想未來，重視人際和諧，享受隨機應變的生活。",
+  "喜愛深度對話，注重全局，兼顧理性與感性，樂於接受變化。",
+];
+
 type IProgress = "idle" | "translating" | "extract" | "success" | "error";
 
 export default function Home() {
   const [result, setResult] = useState<null | ISimilarity>(null);
   const [progress, setProgress] = useState<IProgress>("idle");
+  const [placeholder, setPlaceholder] = useState<string>(placeholderText[0]);
   const pending = progress === "translating" || progress === "extract";
   const sortedResult = result?.similarResults?.sort(
     (a, b) => b.percentage - a.percentage
@@ -95,6 +105,15 @@ export default function Home() {
     getData(inputValue);
   }
 
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      setPlaceholder(placeholderText[index]);
+      index = (index + 1) % placeholderText.length;
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <main className="h-dvh flex flex-col items-center justify-start pt-12 pb-24">
       <WavyBackground className="max-w-4xl mx-auto">
@@ -110,8 +129,8 @@ export default function Home() {
         >
           <Textarea
             id="inputField"
-            className="w-48 max-w-xs p-2 border border-gray-300 rounded"
-            placeholder="Text in English or 繁體中文"
+            className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
+            placeholder={placeholder}
             autoComplete="off"
           />
 
