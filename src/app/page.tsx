@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { getSimilarity, getTranslatedText } from "./services";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -43,12 +44,13 @@ export default function Home() {
 
   const getData = async (text: string) => {
     if (!text) return;
+    const sanitizedText = DOMPurify.sanitize(text);
 
-    const isChinese = isContainChinese(text);
+    const isChinese = isContainChinese(sanitizedText);
 
     if (isChinese) {
       setProgress("translating");
-      const translatedText = await getTranslatedText(text);
+      const translatedText = await getTranslatedText(sanitizedText);
       setProgress("extract");
       const result = await getSimilarity(translatedText);
       setTimeout(() => {
@@ -57,7 +59,7 @@ export default function Home() {
       }, 500);
     } else {
       setProgress("extract");
-      const result = await getSimilarity(text);
+      const result = await getSimilarity(sanitizedText);
       setTimeout(() => {
         setResult(result);
         setProgress("success");
