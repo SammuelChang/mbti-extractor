@@ -154,3 +154,78 @@ export const placeholderList = [
   "社交活力滿滿，愛幻想未來，重視人際和諧，享受隨機應變的生活。",
   "喜愛深度對話，注重全局，兼顧理性與感性，樂於接受變化。",
 ];
+
+export const quizList = [
+  {
+    question: "What is your favorite social activity?",
+    options: [
+      "Attend a lively party and make new friends",
+      "Quietly chat with close friends",
+      "Stay home alone and watch movies or read",
+      "Attend a professional conference to learn new things",
+    ],
+  },
+  {
+    question: "When you have a new idea, what do you usually do?",
+    options: [
+      "Immediately put it into action and see the results",
+      "Carefully plan out each step to ensure smooth execution",
+      "First gather input and opinions from others",
+      "Reflect deeply, weigh the pros and cons",
+    ],
+  },
+  {
+    question: "In an emergency situation, how do you typically react?",
+    options: [
+      "Remain calm and make decisions quickly",
+      "First understand the situation, then take action",
+      "Consider others' feelings, aiming for a complete resolution",
+      "Feel anxious and worried, struggle to make a firm decision",
+    ],
+  },
+  {
+    question: "How do you view the mistakes you've made?",
+    options: [
+      "Can easily let go and no longer dwell on them",
+      "Deeply reflect on them, strive to avoid repeating them",
+      "Feel upset about them for a long time, doubt own abilities",
+      "Usually seek comfort and affirmation from others",
+    ],
+  },
+  {
+    question: "When making decisions, what is your typical approach?",
+    options: [
+      "Prioritize logic and practical effectiveness",
+      "First consider the feelings and needs of others",
+      "Rely on personal intuition and gut instinct",
+      "Carefully compare the various possible options",
+    ],
+  },
+  {
+    question: "What is your typical daily schedule like?",
+    options: [
+      "Spontaneous, without a fixed routine",
+      "Clearly planned out, following a set schedule",
+      "Somewhat flexible, but with a basic schedule",
+      "Difficult to maintain a consistent routine, often changes",
+    ],
+  },
+  {
+    question: "When faced with new things, how do you react?",
+    options: [
+      "Strong curiosity, actively explore",
+      "Observe cautiously, don't rush to make judgments",
+      "Feel excited, immediately try it out",
+      "Think carefully, worry about potential problems",
+    ],
+  },
+  {
+    question: "In social situations, you are typically:",
+    options: [
+      "Proactive in starting conversations and making new connections",
+      "Quietly observe others, wait for them to introduce themselves",
+      "Chat with familiar friends, not very active in meeting new people",
+      "Sometimes actively engage, other times remain quiet",
+    ],
+  },
+];
