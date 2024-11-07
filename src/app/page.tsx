@@ -60,7 +60,7 @@ export default function Home() {
                 width={50}
                 height={50}
               />
-              <div>Take a Quiz</div>
+              <div>Take a Quiz with 8Qs</div>
             </div>
             <motion.div
               variants={{
