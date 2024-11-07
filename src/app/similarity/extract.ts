@@ -16,6 +16,17 @@ function cosineSimilarityToPercentage(similarity: number): number {
   return Math.floor(((similarity + 1) / 2) * 100);
 }
 
+export async function initExtractor() {
+  try {
+    if (extractor) return { message: "Model already loaded" };
+
+    extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+    return { message: "Model loaded" };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
 export async function sentenceExtractor(
   main: any,
   references: any[],

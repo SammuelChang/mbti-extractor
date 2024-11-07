@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pipeline } from "@huggingface/transformers";
+import { Translator } from "./translator";
 
-let pipe: any = null;
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -14,14 +14,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!pipe) {
-      pipe = await pipeline("translation", "Xenova/opus-mt-zh-en");
-    }
+    const result = await Translator(textParam);
 
-    const output = await pipe(textParam); // [{"translation_text":"HERE ARE THE TRANSLATED TEXT"}]
-
-    return NextResponse.json(output[0]?.translation_text);
-  } catch (error) {
+    return NextResponse.json(result);
+  } catch (error: any) {
     return NextResponse.json(
       { error: "Failed to load model", details: error.message },
       { status: 500 }
