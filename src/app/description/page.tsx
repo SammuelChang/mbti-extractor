@@ -6,29 +6,10 @@ import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { mbtiList, placeholderList } from "../../../data";
+import { placeholderList } from "../../../data";
 import { ISimilarity } from "../../../interface";
-import { getSimilarity, getTranslatedText } from "../services";
-import ImagesReveal from "../components/images-reveal";
+import { getSimilarity } from "../services";
 import { motion } from "framer-motion";
-
-const cards = mbtiList.map((item, index) => {
-  return {
-    src: `/mbti/${item.type.toUpperCase()}.png`,
-    type: item.type.toUpperCase(),
-    angle: `${Math.random() * 30 - 15}deg`,
-  };
-});
-
-function isContainChinese(text: string) {
-  const chineseCount = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-
-  if (chineseCount > 0) {
-    return true;
-  }
-
-  return false;
-}
 
 type IProgress = "idle" | "translating" | "extract" | "success" | "error";
 
@@ -45,25 +26,12 @@ export default function Describe() {
     if (!text) return;
     const sanitizedText = DOMPurify.sanitize(text);
 
-    const isChinese = isContainChinese(sanitizedText);
-
-    if (isChinese) {
-      setProgress("translating");
-      const translatedText = await getTranslatedText(sanitizedText);
-      setProgress("extract");
-      const result = await getSimilarity(translatedText);
-      setTimeout(() => {
-        setResult(result);
-        setProgress("success");
-      }, 500);
-    } else {
-      setProgress("extract");
-      const result = await getSimilarity(sanitizedText);
-      setTimeout(() => {
-        setResult(result);
-        setProgress("success");
-      }, 500);
-    }
+    setProgress("extract");
+    const result = await getSimilarity(sanitizedText);
+    setTimeout(() => {
+      setResult(result);
+      setProgress("success");
+    }, 500);
   };
 
   function submitHandler(e: React.FormEvent<HTMLFormElement>) {
@@ -112,12 +80,16 @@ export default function Describe() {
           )}
         </Button>
       </form>
-
-      {sortedResult?.similarResults?.slice(0, 3).map((item, index) => (
-        <div key={index} className="relative">
+      <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
+        {sortedResult?.slice(0, 3).map((item, index) => (
           <motion.div
-            className="relative"
+            key={index}
+            className="flex flex-col items-center"
             initial="hidden"
+            variants={{
+              hidden: { opacity: 0, scale: 0.8 },
+              visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
+            }}
             animate="visible"
             whileHover={{
               scale: 1,
@@ -131,23 +103,19 @@ export default function Describe() {
               },
             }}
           >
-            {/* Type Label */}
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 transform">
-              <span className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
-                {item.type}&nbsp;({item.percentage}%)
-              </span>
+            <div className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
+              {item.type}&nbsp;({item.percentage}%)
             </div>
-
             <Image
-              className="size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
+              className="mt-2 size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
               src={`/mbti/${item.type.toUpperCase()}.png`}
               alt={item.type}
               width={150}
               height={150}
             />
           </motion.div>
-        </div>
-      ))}
+        ))}
+      </div>
     </>
   );
 }
