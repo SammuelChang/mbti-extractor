@@ -14,7 +14,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { quizList } from "../../../data";
+import { useLocale } from "next-intl";
+import { quizList } from "../../../../data/quiz";
 
 const FormSchema = z.object({
   items: z.array(
@@ -27,11 +28,17 @@ const FormSchema = z.object({
 
 const optionLabels = ["A", "B", "C", "D"];
 
+function getLocaleQuizList(locale: string) {
+  return quizList[locale] || quizList["en"];
+}
+
 export default function CheckboxReactHookFormSingle() {
+  const locale = useLocale();
+  const quizs = getLocaleQuizList(locale);
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      items: quizList.map((quiz) => ({
+      items: quizs.map((quiz) => ({
         question: quiz.question,
         selectedOption: null,
       })),
@@ -62,7 +69,7 @@ export default function CheckboxReactHookFormSingle() {
                   </FormLabel>
                 </div>
                 <div className="flex flex-col space-y-2">
-                  {quizList[index].options.map((option, optionIndex) => (
+                  {quizs[index].options.map((option, optionIndex) => (
                     <Button
                       key={`${item.question}-${optionIndex}`}
                       type="button"

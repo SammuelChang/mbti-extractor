@@ -1,0 +1,13 @@
+{
+  "HomePage": {
+    "title": "MBTI快速測驗",
+    "subTitle": "透過AI分析您的句子，使用嵌入式技術來發現您的MBTI類型。",
+    "goTyping": "描述自己",
+    "goChoose": "進行8題測驗"
+  },
+  "Form": {
+    "translating": "翻譯中...",
+    "extracting": "萃取中...",
+    "submit": "送出"
+  }
+}

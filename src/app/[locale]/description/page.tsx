@@ -6,17 +6,43 @@ import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { placeholderList } from "../../../data";
-import { ISimilarity } from "../../../interface";
-import { getSimilarity } from "../services";
+import { ISimilarity } from "../../../../interface";
+import { getSimilarity } from "../../services";
 import { motion } from "framer-motion";
+import { useLocale, useTranslations } from "next-intl";
+
+const placeholderList = [
+  "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
+  "Thrive in social settings, imagine possibilities, focus on harmony, and stay open to spontaneity.",
+  "Enjoy one-on-one talks, find patterns, balance empathy with logic, and adapt easily to changes.",
+];
+
+const placeholderListZhTW = [
+  "喜愛安靜時光，重視細節，偏好理性分析，並享受有計劃的安排。",
+  "社交活力滿滿，愛幻想未來，重視人際和諧，享受隨機應變的生活。",
+  "喜愛深度對話，注重全局，兼顧理性與感性，樂於接受變化。",
+];
+
+function getLocalePlaceholder(locale: string) {
+  if (locale === "en") {
+    return placeholderList;
+  } else if (locale === "zh-TW") {
+    return placeholderListZhTW;
+  } else {
+    return placeholderList;
+  }
+}
 
 type IProgress = "idle" | "translating" | "extract" | "success" | "error";
 
 export default function Describe() {
+  const locale = useLocale();
+  const t = useTranslations("Form");
   const [result, setResult] = useState<null | ISimilarity>(null);
   const [progress, setProgress] = useState<IProgress>("idle");
-  const [placeholder, setPlaceholder] = useState<string>(placeholderList[0]);
+  const [placeholder, setPlaceholder] = useState<string>(
+    getLocalePlaceholder(locale)[0]
+  );
   const pending = progress === "translating" || progress === "extract";
   const sortedResult = result?.similarResults?.sort(
     (a, b) => b.similarity - a.similarity
@@ -45,8 +71,8 @@ export default function Describe() {
   useEffect(() => {
     let index = 0;
     const interval = setInterval(() => {
-      setPlaceholder(placeholderList[index]);
-      index = (index + 1) % placeholderList.length;
+      setPlaceholder(getLocalePlaceholder(locale)[index]);
+      index = (index + 1) % getLocalePlaceholder(locale).length;
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -65,17 +91,17 @@ export default function Describe() {
         />
 
         <Button type="submit" disabled={pending} className="w-48 mt-8">
-          {!pending && "Submit"}
+          {!pending && t("submit")}
           {progress === "translating" && (
             <>
               <Spinner />
-              Translating...
+              {t("translating")}
             </>
           )}
           {progress === "extract" && (
             <>
               <Spinner />
-              Extracting...
+              {t("extracting")}
             </>
           )}
         </Button>

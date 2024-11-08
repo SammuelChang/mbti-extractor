@@ -1,0 +1,13 @@
+{
+  "HomePage": {
+    "title": "MBTI Extractor",
+    "subTitle": "Discover your MBTI type through AI analysis of your sentences using embeddings.",
+    "goTyping": "Describe Myself",
+    "goChoose": "Take a Quiz with 8Qs"
+  },
+  "Form": {
+    "translating":  "Translating...",
+    "extracting":  "Extracting...",
+    "submit": "Submit"
+  }
+}

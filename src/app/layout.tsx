@@ -1,8 +1,5 @@
 import localFont from "next/font/local";
 import "./globals.css";
-import { Github } from "lucide-react";
-import Link from "next/link";
-import { motion } from "framer-motion";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,11 +27,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="absolute top-0 right-0 z-10 p-4">
-          <Link href="https://github.com/SammuelChang" target="_blank">
-            <Github />
-          </Link>
-        </div>
         {children}
       </body>
     </html>
