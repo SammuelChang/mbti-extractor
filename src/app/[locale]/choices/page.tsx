@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { useLocale, useTranslations } from "next-intl";
 import { quizList } from "../../../../data/quiz";
+import { cn } from "@/lib/utils";
 
 const FormSchema = z.object({
   items: z.array(
@@ -56,7 +57,13 @@ export default function CheckboxReactHookFormSingle() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-12">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className={cn(
+          "space-y-8 pb-12",
+          "md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-12 md:space-y-0"
+        )}
+      >
         {form.getValues("items").map((item, index) => (
           <FormField
             key={item.question}
@@ -93,7 +100,7 @@ export default function CheckboxReactHookFormSingle() {
             )}
           />
         ))}
-        <div className="flex justify-center">
+        <div className="flex justify-center md:col-span-2">
           <Button type="submit" disabled={!allAnswered}>
             {t("submit")}
           </Button>

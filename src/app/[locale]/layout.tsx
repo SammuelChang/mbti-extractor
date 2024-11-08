@@ -2,7 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Link, routing } from "@/i18n/routing";
-import { Github } from "lucide-react";
+import { Github, House } from "lucide-react";
 import LocaleSwitcher from "../components/locale-switcher";
 
 export default async function LocaleLayout({
@@ -26,11 +26,16 @@ export default async function LocaleLayout({
   return (
     <>
       <NextIntlClientProvider messages={messages}>
-        <div className="absolute top-0 right-0 z-10 p-4 flex gap-4 items-center">
-          <LocaleSwitcher />
-          <Link href="https://github.com/SammuelChang" target="_blank">
-            <Github />
+        <div className="w-full absolute top-0 right-0 z-10 p-4 flex gap-4 items-center justify-between">
+          <Link href="/">
+            <House />
           </Link>
+          <div className="flex gap-4 items-center">
+            <LocaleSwitcher />
+            <Link href="https://github.com/SammuelChang" target="_blank">
+              <Github />
+            </Link>
+          </div>
         </div>
         {children}
       </NextIntlClientProvider>
