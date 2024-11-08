@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { mbtiList } from "../../data";
 import { ChevronRight } from "lucide-react";
 import ImagesReveal from "./components/images-reveal";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { mbtiList } from "../../data/mbti-list";
 
 const cards = mbtiList.map((item, index) => {
   return {

@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { quizList } from "../../../../data/quiz";
 
 const FormSchema = z.object({
@@ -34,6 +34,7 @@ function getLocaleQuizList(locale: string) {
 
 export default function CheckboxReactHookFormSingle() {
   const locale = useLocale();
+  const t = useTranslations("Form");
   const quizs = getLocaleQuizList(locale);
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -94,7 +95,7 @@ export default function CheckboxReactHookFormSingle() {
         ))}
         <div className="flex justify-center">
           <Button type="submit" disabled={!allAnswered}>
-            Submit
+            {t("submit")}
           </Button>
         </div>
       </form>

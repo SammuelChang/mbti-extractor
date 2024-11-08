@@ -3,7 +3,7 @@ export interface IMbti {
   trait: string;
 }
 
-export interface IMbtiCatrgory {
+export interface IMbtiDimension {
   categoryName: string;
   categoryList: IMbtiTrait[];
 }

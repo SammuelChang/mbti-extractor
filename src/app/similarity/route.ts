@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mbtiList } from "@/../data";
 import { IMbti } from "@/../interface";
 import { sentenceExtractor } from "./extract";
+import { mbtiList } from "../../../data/mbti-list";
 
 export async function GET(request: NextRequest) {
   try {

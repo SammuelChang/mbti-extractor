@@ -1,6 +1,6 @@
-import { IMbtiCatrgory } from "../interface";
+import { IMbtiDimension } from "../interface";
 
-export const mbtiTraitList: IMbtiCatrgory[] = [
+export const mbtiDimension: IMbtiDimension[] = [
   {
     categoryName: "energy",
     categoryList: [

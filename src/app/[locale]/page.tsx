@@ -6,7 +6,7 @@ import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ImagesReveal from "../components/images-reveal";
-import { mbtiList } from "../../../data/mbti-type";
+import { mbtiList } from "../../../data/mbti-list";
 
 const cards = mbtiList.map((item, index) => {
   return {
