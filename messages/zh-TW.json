@@ -7,7 +7,9 @@
   },
   "Form": {
     "translating": "翻譯中...",
-    "extracting": "萃取中...",
-    "submit": "送出"
+    "extracting": "分析中...",
+    "submit": "送出",
+    "quiz": "測驗",
+    "result": "結果"
   }
 }
