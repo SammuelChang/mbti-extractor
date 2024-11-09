@@ -1,13 +1,17 @@
+"use server";
+
 import { ISimilarity } from "../../interface";
 
-export function getTranslatedText(text: string): Promise<string> {
-  return fetch(`/translate?text=${encodeURIComponent(text)}`).then((res) =>
-    res.json()
+export async function getTranslatedText(text: string): Promise<string> {
+  const response = await fetch(
+    `http://localhost:3000/translate?text=${encodeURIComponent(text)}`
   );
+  return response.text();
 }
 
-export function getSimilarity(text: string): Promise<ISimilarity> {
-  return fetch(`/similarity?text=${encodeURIComponent(text)}`).then((res) =>
-    res.json()
+export async function getSimilarity(text: string): Promise<ISimilarity> {
+  const response = await fetch(
+    `http://localhost:3000/similarity?text=${encodeURIComponent(text)}`
   );
+  return response.json();
 }
