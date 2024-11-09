@@ -10,6 +10,7 @@ import { ISimilarity } from "../../../../interface";
 import { getSimilarity } from "../../services";
 import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
+import LoadingButton from "@/app/components/loading-button";
 
 const placeholderList = [
   "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
@@ -33,7 +34,7 @@ function getLocalePlaceholder(locale: string) {
   }
 }
 
-type IProgress = "idle" | "translating" | "extract" | "success" | "error";
+type IProgress = "idle" | "translating" | "extracting" | "success" | "error";
 
 export default function Describe() {
   const locale = useLocale();
@@ -43,29 +44,43 @@ export default function Describe() {
   const [placeholder, setPlaceholder] = useState<string>(
     getLocalePlaceholder(locale)[0]
   );
-  const pending = progress === "translating" || progress === "extract";
+  const loadingText = () => {
+    switch (progress) {
+      case "extracting":
+        return t("extracting");
+      case "translating":
+        return t("translating");
+      default:
+        return t("submit");
+    }
+  };
+
   const sortedResult = result?.similarResults?.sort(
     (a, b) => b.similarity - a.similarity
   );
 
-  const getData = async (text: string) => {
-    if (!text) return;
-    const sanitizedText = DOMPurify.sanitize(text);
-
-    setProgress("extract");
-    const result = await getSimilarity(sanitizedText);
-    setTimeout(() => {
-      setResult(result);
-      setProgress("success");
-    }, 500);
-  };
-
-  function submitHandler(e: React.FormEvent<HTMLFormElement>) {
+  async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const inputValue = (
-      e.currentTarget.elements.namedItem("inputField") as HTMLInputElement
-    ).value;
-    getData(inputValue);
+
+    try {
+      const inputValue = (
+        e.currentTarget.elements.namedItem("inputField") as HTMLInputElement
+      ).value;
+
+      if (!inputValue) {
+        throw new Error("Input value is empty");
+      }
+      const sanitizedInputValue = DOMPurify.sanitize(inputValue);
+      setProgress("extracting");
+      const result = await getSimilarity(sanitizedInputValue);
+      setTimeout(() => {
+        setResult(result);
+        setProgress("success");
+      }, 500);
+    } catch (error) {
+      console.error(error);
+      setProgress("error");
+    }
   }
 
   useEffect(() => {
@@ -90,21 +105,13 @@ export default function Describe() {
           autoComplete="off"
         />
 
-        <Button type="submit" disabled={pending} className="w-48 mt-8">
-          {!pending && t("submit")}
-          {progress === "translating" && (
-            <>
-              <Spinner />
-              {t("translating")}
-            </>
-          )}
-          {progress === "extract" && (
-            <>
-              <Spinner />
-              {t("extracting")}
-            </>
-          )}
-        </Button>
+        <LoadingButton
+          type="submit"
+          isLoading={progress === "extracting" || progress === "translating"}
+          loadingText={loadingText()}
+        >
+          {t("submit")}
+        </LoadingButton>
       </form>
       <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
         {sortedResult?.slice(0, 3).map((item, index) => (
