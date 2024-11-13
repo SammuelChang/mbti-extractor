@@ -1,4 +1,6 @@
 import createNextIntlPlugin from 'next-intl/plugin';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const withNextIntl = createNextIntlPlugin();
 
@@ -15,7 +17,16 @@ const nextConfig = {
     // output: 'standalone', // Feel free to modify/remove this option
     
     // Indicate that these packages should not be bundled by webpack
-    serverExternalPackages: ['sharp', 'onnxruntime-node'],
+    webpack(config, { isServer }) {
+        const __dirname = path.dirname(fileURLToPath(import.meta.url));
+        config.resolve.alias['@huggingface/transformers'] = path.resolve(__dirname, 'node_modules/@huggingface/transformers');
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            "sharp$": false,
+            "onnxruntime-node$": false,
+        }
+        return config;
+    }
 };
 
 export default withNextIntl(nextConfig);
