@@ -31,7 +31,7 @@ const FormSchema = z.object({
   items: z.array(
     z.object({
       question: z.string(),
-      selectedOption: z.string().nullable(),
+      selectedOptionIndex: z.number().nullable(),
     })
   ),
 });
@@ -46,14 +46,7 @@ export default function CheckboxReactHookFormSingle() {
   const locale = useLocale();
   const t = useTranslations("Form");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentInput, setCurrentInput] = useState<string>("");
   const [tab, setTab] = useState<"quiz" | "result">("quiz");
-
-  const {
-    result: translResult,
-    sendMessage: sendTranslMessage,
-    workerStatus: translStatus,
-  } = useTranslationWorker();
 
   const {
     result: embeddingResult,
@@ -67,25 +60,59 @@ export default function CheckboxReactHookFormSingle() {
     defaultValues: {
       items: quizs.map((quiz) => ({
         question: quiz.question,
-        selectedOption: null,
+        selectedOptionIndex: null,
       })),
     },
   });
 
   const allAnswered = form
     .watch("items")
-    .every((item) => item.selectedOption !== null);
+    .every((item) => item.selectedOptionIndex !== null);
 
   const sortedResult = embeddingResult?.output?.similarResults?.sort(
     (a, b) => b.similarity - a.similarity
   );
 
-  // 監聽翻譯結果
   useEffect(() => {
-    if (translStatus === "complete" && translResult && currentInput) {
-      const translatedText = translResult.output[0].translation_text;
-      const sanitizedInputValue = DOMPurify.sanitize(translatedText);
+    if (embeddingStatus === "complete" || embeddingStatus === "error") {
+      setIsProcessing(false);
+      if (embeddingStatus === "complete") {
+        setTab("result");
+      }
+    }
+  }, [embeddingStatus]);
 
+  const loadingText = () => {
+    if (embeddingStatus === "processing") return t("extracting");
+    return t("submit");
+  };
+
+  async function submitHandler(data: z.infer<typeof FormSchema>) {
+    try {
+      const formValues = data?.items;
+      if (!formValues) {
+        throw new Error("Form values is empty");
+      }
+
+      if (formValues.some((item) => item.selectedOptionIndex === null)) {
+        throw new Error("Some questions are not answered");
+      }
+
+      setIsProcessing(true);
+      const concatAnswer = formValues
+        .map(
+          (item) =>
+            quizList["en"].find((q) => q.question === item.question)?.options[
+              item.selectedOptionIndex
+            ]
+        )
+        .join(" ");
+
+      if (!concatAnswer) {
+        throw new Error("Input value is empty");
+      }
+
+      const sanitizedInputValue = DOMPurify.sanitize(concatAnswer);
       sendEmbeddingMessage({
         array: [
           {
@@ -96,59 +123,6 @@ export default function CheckboxReactHookFormSingle() {
         ],
         pathParam: "trait",
       });
-    }
-  }, [translStatus, translResult, sendEmbeddingMessage, currentInput]);
-
-  // 監聽處理狀態
-  useEffect(() => {
-    if (
-      embeddingStatus === "complete" ||
-      translStatus === "error" ||
-      embeddingStatus === "error"
-    ) {
-      setIsProcessing(false);
-      setCurrentInput("");
-      if (embeddingStatus === "complete") {
-        setTab("result");
-      }
-    }
-  }, [embeddingStatus, translStatus]);
-
-  const loadingText = () => {
-    if (translStatus === "processing") return t("translating");
-    if (embeddingStatus === "processing") return t("extracting");
-    return t("submit");
-  };
-
-  async function submitHandler(data: z.infer<typeof FormSchema>) {
-    try {
-      setIsProcessing(true);
-      const formValues = data?.items;
-      const concatAnswer = formValues
-        .map((item) => item.selectedOption)
-        .join(" ");
-
-      if (!concatAnswer) {
-        throw new Error("Input value is empty");
-      }
-
-      setCurrentInput(concatAnswer);
-
-      if (isContainChinese(concatAnswer)) {
-        sendTranslMessage(concatAnswer);
-      } else {
-        const sanitizedInputValue = DOMPurify.sanitize(concatAnswer);
-        sendEmbeddingMessage({
-          array: [
-            {
-              type: null,
-              trait: sanitizedInputValue,
-            },
-            ...mbtiList,
-          ],
-          pathParam: "trait",
-        });
-      }
     } catch (error) {
       console.error(error);
       setIsProcessing(false);
@@ -185,7 +159,7 @@ export default function CheckboxReactHookFormSingle() {
               <FormField
                 key={item.question}
                 control={form.control}
-                name={`items.${index}.selectedOption`}
+                name={`items.${index}.selectedOptionIndex`}
                 render={() => (
                   <FormItem>
                     <div className="mb-4">
@@ -199,15 +173,16 @@ export default function CheckboxReactHookFormSingle() {
                           key={`${item.question}-${optionIndex}`}
                           type="button"
                           className={`text-wrap md:text-nowrap text-left h-12 md:h-fit px-4 py-2 rounded-md transition-colors duration-300 w-full flex justify-start ${
-                            form.getValues(`items.${index}.selectedOption`) ===
-                            option
+                            form.getValues(
+                              `items.${index}.selectedOptionIndex`
+                            ) === optionIndex
                               ? "bg-primary text-white hover:bg-primary-600"
                               : "bg-secondary text-gray-600 hover:bg-secondary-600"
                           }`}
                           onClick={() => {
                             form.setValue(
-                              `items.${index}.selectedOption`,
-                              option
+                              `items.${index}.selectedOptionIndex`,
+                              optionIndex
                             );
                           }}
                         >
