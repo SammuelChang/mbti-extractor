@@ -25,7 +25,7 @@ export default function Home() {
       <section className="flex gap-4 z-10 flex-col md:flex-row justify-center md:mt-24 mt-8">
         <Link href="/client/description">
           <motion.div
-            className="md:h-36 bg-accent rounded-md flex items-center p-4 gap-4 justify-between"
+            className="h-16 md:h-36 bg-accent rounded-md flex items-center p-4 gap-4 justify-between"
             initial="initial"
             animate="initial"
             whileHover="animate"
@@ -51,7 +51,7 @@ export default function Home() {
         </Link>
         <Link href="/client/choices">
           <motion.div
-            className="md:h-36 bg-accent rounded-md flex items-center p-4 gap-4 justify-between"
+            className="h-16 md:h-36 bg-accent rounded-md flex items-center p-4 gap-4 justify-between"
             initial="initial"
             animate="initial"
             whileHover="animate"

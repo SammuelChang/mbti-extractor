@@ -37,7 +37,7 @@ export default async function LocaleLayout({
             </Link>
           </div>
         </div>
-        {children}
+        <main className="pt-4">{children}</main>
       </NextIntlClientProvider>
     </>
   );
