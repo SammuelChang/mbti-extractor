@@ -11,6 +11,7 @@ import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
 import { mbtiList } from "../../../../../data/mbti-list";
 import { useTranslationWorker } from "@/hooks/use-translation-worker";
 import { isContainChinese } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const placeholderList = [
   "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
@@ -39,6 +40,7 @@ export default function Describe() {
   );
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentInput, setCurrentInput] = useState<string>("");
+  const [tab, setTab] = useState<"quiz" | "result">("quiz");
 
   const {
     result: translResult,
@@ -83,6 +85,9 @@ export default function Describe() {
     ) {
       setIsProcessing(false);
       setCurrentInput("");
+      if (embeddingStatus === "complete") {
+        setTab("result");
+      }
     }
   }, [embeddingStatus, translStatus]);
 
@@ -135,65 +140,84 @@ export default function Describe() {
     isProcessing || !["ready", "complete"].includes(embeddingStatus);
 
   return (
-    <>
-      <form
-        className="flex gap-2 items-center mb-4 z-10 flex-col"
-        onSubmit={submitHandler}
-      >
-        <Textarea
-          id="inputField"
-          className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
-          placeholder={placeholder}
-          autoComplete="off"
-          disabled={isProcessing}
-        />
-
-        <LoadingButton
-          type="submit"
-          isLoading={isLoading}
-          loadingText="loading..."
-          disabled={isProcessing}
+    <Tabs value={tab} className="flex flex-col items-center gap-4">
+      <TabsList>
+        <TabsTrigger value="quiz" onClick={() => setTab("quiz")}>
+          {t("quiz")}
+        </TabsTrigger>
+        <TabsTrigger
+          value="result"
+          onClick={() => setTab("result")}
+          disabled={!sortedResult || sortedResult?.length === 0}
         >
-          {t("submit")}
-        </LoadingButton>
-      </form>
+          {t("result")}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="quiz">
+        <form
+          className="flex gap-2 items-center mb-4 z-10 flex-col"
+          onSubmit={submitHandler}
+        >
+          <Textarea
+            id="inputField"
+            className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
+            placeholder={placeholder}
+            autoComplete="off"
+            disabled={isProcessing}
+          />
 
-      <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
-        {sortedResult?.slice(0, 3).map((item: any, index: number) => (
-          <motion.div
-            key={index}
-            className="flex flex-col items-center"
-            initial="hidden"
-            variants={{
-              hidden: { opacity: 0, scale: 0.8 },
-              visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
-            }}
-            animate="visible"
-            whileHover={{
-              scale: 1,
-              rotate: "5deg",
-              zIndex: 10,
-              transition: {
-                duration: 0.3,
-                type: "spring",
-                stiffness: 150,
-                damping: 20,
-              },
-            }}
+          <LoadingButton
+            type="submit"
+            isLoading={isLoading}
+            loadingText="loading..."
+            disabled={isProcessing}
           >
-            <div className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
-              {item.originalData.type}&nbsp;({item.percentage}%)
-            </div>
-            <Image
-              className="mt-2 size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
-              src={`/mbti/${item.originalData.type.toUpperCase()}.png`}
-              alt={item.originalData.type}
-              width={150}
-              height={150}
-            />
-          </motion.div>
-        ))}
-      </div>
-    </>
+            {t("submit")}
+          </LoadingButton>
+        </form>
+      </TabsContent>
+      <TabsContent value="result">
+        <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
+          {sortedResult?.slice(0, 3).map((item: any, index: number) => (
+            <motion.div
+              key={index}
+              className="flex flex-col items-center"
+              initial="hidden"
+              variants={{
+                hidden: { opacity: 0, scale: 0.8 },
+                visible: {
+                  opacity: 1,
+                  scale: 1,
+                  transition: { duration: 0.5 },
+                },
+              }}
+              animate="visible"
+              whileHover={{
+                scale: 1,
+                rotate: "5deg",
+                zIndex: 10,
+                transition: {
+                  duration: 0.3,
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 20,
+                },
+              }}
+            >
+              <div className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
+                {item.originalData.type}&nbsp;({item.percentage}%)
+              </div>
+              <Image
+                className="mt-2 size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
+                src={`/mbti/${item.originalData.type.toUpperCase()}.png`}
+                alt={item.originalData.type}
+                width={150}
+                height={150}
+              />
+            </motion.div>
+          ))}
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }
