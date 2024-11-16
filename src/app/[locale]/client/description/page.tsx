@@ -2,15 +2,15 @@
 
 import DOMPurify from "dompurify";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import Spinner from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { ISimilarity } from "../../../../interface";
-import { getSimilarity } from "../../services";
 import { motion } from "framer-motion";
 import { useLocale, useTranslations } from "next-intl";
 import LoadingButton from "@/app/components/loading-button";
+import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
+import { mbtiList } from "../../../../../data/mbti-list";
+import { useTranslationWorker } from "@/hooks/use-translation-worker";
+import { isContainChinese } from "@/lib/utils";
 
 const placeholderList = [
   "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
@@ -25,42 +25,70 @@ const placeholderListZhTW = [
 ];
 
 function getLocalePlaceholder(locale: string) {
-  if (locale === "en") {
-    return placeholderList;
-  } else if (locale === "zh-TW") {
+  if (locale === "zh-TW") {
     return placeholderListZhTW;
-  } else {
-    return placeholderList;
   }
+  return placeholderList;
 }
-
-type IProgress = "idle" | "translating" | "extracting" | "success" | "error";
 
 export default function Describe() {
   const locale = useLocale();
   const t = useTranslations("Form");
-  const [result, setResult] = useState<null | ISimilarity>(null);
-  const [progress, setProgress] = useState<IProgress>("idle");
   const [placeholder, setPlaceholder] = useState<string>(
     getLocalePlaceholder(locale)[0]
   );
-  const loadingText = () => {
-    switch (progress) {
-      case "extracting":
-        return t("extracting");
-      case "translating":
-        return t("translating");
-      default:
-        return t("submit");
-    }
-  };
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentInput, setCurrentInput] = useState<string>("");
 
-  const sortedResult = result?.similarResults?.sort(
+  const {
+    result: translResult,
+    sendMessage: sendTranslMessage,
+    workerStatus: translStatus,
+  } = useTranslationWorker();
+
+  const {
+    result: embeddingResult,
+    sendMessage: sendEmbeddingMessage,
+    workerStatus: embeddingStatus,
+  } = useEmbeddingWorker();
+
+  const sortedResult = embeddingResult?.output?.similarResults?.sort(
     (a, b) => b.similarity - a.similarity
   );
 
+  // 監聽翻譯結果
+  useEffect(() => {
+    if (translStatus === "complete" && translResult && currentInput) {
+      const translatedText = translResult.output[0].translation_text;
+      const sanitizedInputValue = DOMPurify.sanitize(translatedText);
+
+      sendEmbeddingMessage({
+        array: [
+          {
+            type: null,
+            trait: sanitizedInputValue,
+          },
+          ...mbtiList,
+        ],
+        pathParam: "trait",
+      });
+    }
+  }, [translStatus, translResult, sendEmbeddingMessage]);
+
+  useEffect(() => {
+    if (
+      embeddingStatus === "complete" ||
+      translStatus === "error" ||
+      embeddingStatus === "error"
+    ) {
+      setIsProcessing(false);
+      setCurrentInput("");
+    }
+  }, [embeddingStatus, translStatus]);
+
   async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setIsProcessing(true);
 
     try {
       const inputValue = (
@@ -70,16 +98,27 @@ export default function Describe() {
       if (!inputValue) {
         throw new Error("Input value is empty");
       }
-      const sanitizedInputValue = DOMPurify.sanitize(inputValue);
-      setProgress("extracting");
-      const result = await getSimilarity(sanitizedInputValue);
-      setTimeout(() => {
-        setResult(result);
-        setProgress("success");
-      }, 500);
+
+      setCurrentInput(inputValue);
+
+      if (isContainChinese(inputValue)) {
+        sendTranslMessage(inputValue);
+      } else {
+        const sanitizedInputValue = DOMPurify.sanitize(inputValue);
+        sendEmbeddingMessage({
+          array: [
+            {
+              type: null,
+              trait: sanitizedInputValue,
+            },
+            ...mbtiList,
+          ],
+          pathParam: "trait",
+        });
+      }
     } catch (error) {
       console.error(error);
-      setProgress("error");
+      setIsProcessing(false);
     }
   }
 
@@ -90,7 +129,10 @@ export default function Describe() {
       index = (index + 1) % getLocalePlaceholder(locale).length;
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [locale]);
+
+  const isLoading =
+    isProcessing || !["ready", "complete"].includes(embeddingStatus);
 
   return (
     <>
@@ -103,18 +145,21 @@ export default function Describe() {
           className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
           placeholder={placeholder}
           autoComplete="off"
+          disabled={isProcessing}
         />
 
         <LoadingButton
           type="submit"
-          isLoading={progress === "extracting" || progress === "translating"}
-          loadingText={loadingText()}
+          isLoading={isLoading}
+          loadingText="loading..."
+          disabled={isProcessing}
         >
           {t("submit")}
         </LoadingButton>
       </form>
+
       <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
-        {sortedResult?.slice(0, 3).map((item, index) => (
+        {sortedResult?.slice(0, 3).map((item: any, index: number) => (
           <motion.div
             key={index}
             className="flex flex-col items-center"
@@ -137,12 +182,12 @@ export default function Describe() {
             }}
           >
             <div className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
-              {item.type}&nbsp;({item.percentage}%)
+              {item.originalData.type}&nbsp;({item.percentage}%)
             </div>
             <Image
               className="mt-2 size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
-              src={`/mbti/${item.type.toUpperCase()}.png`}
-              alt={item.type}
+              src={`/mbti/${item.originalData.type.toUpperCase()}.png`}
+              alt={item.originalData.type}
               width={150}
               height={150}
             />

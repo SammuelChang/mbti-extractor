@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,15 +15,17 @@ import {
 } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocale, useTranslations } from "next-intl";
-import { quizList } from "../../../../data/quiz";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ISimilarity } from "../../../../interface";
 import LoadingButton from "@/app/components/loading-button";
 import DOMPurify from "dompurify";
-import { getSimilarity } from "@/app/services";
 import { motion } from "framer-motion";
+import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
+import { useTranslationWorker } from "@/hooks/use-translation-worker";
+import { isContainChinese } from "@/lib/utils";
+import { mbtiList } from "../../../../../data/mbti-list";
+import { quizList } from "../../../../../data/quiz";
 
 const FormSchema = z.object({
   items: z.array(
@@ -41,14 +42,25 @@ function getLocaleQuizList(locale: string) {
   return quizList[locale] || quizList["en"];
 }
 
-type IProgress = "idle" | "translating" | "extracting" | "success" | "error";
-
 export default function CheckboxReactHookFormSingle() {
   const locale = useLocale();
   const t = useTranslations("Form");
-  const [result, setResult] = useState<null | ISimilarity>(null);
-  const [progress, setProgress] = useState<IProgress>("idle");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentInput, setCurrentInput] = useState<string>("");
   const [tab, setTab] = useState<"quiz" | "result">("quiz");
+
+  const {
+    result: translResult,
+    sendMessage: sendTranslMessage,
+    workerStatus: translStatus,
+  } = useTranslationWorker();
+
+  const {
+    result: embeddingResult,
+    sendMessage: sendEmbeddingMessage,
+    workerStatus: embeddingStatus,
+  } = useEmbeddingWorker();
+
   const quizs = getLocaleQuizList(locale);
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -60,27 +72,57 @@ export default function CheckboxReactHookFormSingle() {
     },
   });
 
-  const loadingText = () => {
-    switch (progress) {
-      case "extracting":
-        return t("extracting");
-      case "translating":
-        return t("translating");
-      default:
-        return t("submit");
-    }
-  };
-
   const allAnswered = form
     .watch("items")
     .every((item) => item.selectedOption !== null);
 
-  const sortedResult = result?.similarResults?.sort(
+  const sortedResult = embeddingResult?.output?.similarResults?.sort(
     (a, b) => b.similarity - a.similarity
   );
 
+  // 監聽翻譯結果
+  useEffect(() => {
+    if (translStatus === "complete" && translResult && currentInput) {
+      const translatedText = translResult.output[0].translation_text;
+      const sanitizedInputValue = DOMPurify.sanitize(translatedText);
+
+      sendEmbeddingMessage({
+        array: [
+          {
+            type: null,
+            trait: sanitizedInputValue,
+          },
+          ...mbtiList,
+        ],
+        pathParam: "trait",
+      });
+    }
+  }, [translStatus, translResult, sendEmbeddingMessage, currentInput]);
+
+  // 監聽處理狀態
+  useEffect(() => {
+    if (
+      embeddingStatus === "complete" ||
+      translStatus === "error" ||
+      embeddingStatus === "error"
+    ) {
+      setIsProcessing(false);
+      setCurrentInput("");
+      if (embeddingStatus === "complete") {
+        setTab("result");
+      }
+    }
+  }, [embeddingStatus, translStatus]);
+
+  const loadingText = () => {
+    if (translStatus === "processing") return t("translating");
+    if (embeddingStatus === "processing") return t("extracting");
+    return t("submit");
+  };
+
   async function submitHandler(data: z.infer<typeof FormSchema>) {
     try {
+      setIsProcessing(true);
       const formValues = data?.items;
       const concatAnswer = formValues
         .map((item) => item.selectedOption)
@@ -89,19 +131,32 @@ export default function CheckboxReactHookFormSingle() {
       if (!concatAnswer) {
         throw new Error("Input value is empty");
       }
-      const sanitizedInputValue = DOMPurify.sanitize(concatAnswer);
-      setProgress("extracting");
-      const result = await getSimilarity(sanitizedInputValue);
-      setTimeout(() => {
-        setResult(result);
-        setProgress("success");
-        setTab("result");
-      }, 500);
+
+      setCurrentInput(concatAnswer);
+
+      if (isContainChinese(concatAnswer)) {
+        sendTranslMessage(concatAnswer);
+      } else {
+        const sanitizedInputValue = DOMPurify.sanitize(concatAnswer);
+        sendEmbeddingMessage({
+          array: [
+            {
+              type: null,
+              trait: sanitizedInputValue,
+            },
+            ...mbtiList,
+          ],
+          pathParam: "trait",
+        });
+      }
     } catch (error) {
       console.error(error);
-      setProgress("error");
+      setIsProcessing(false);
     }
   }
+
+  const isLoading =
+    isProcessing || !["ready", "complete"].includes(embeddingStatus);
 
   return (
     <Tabs value={tab} className="flex flex-col items-center gap-4">
@@ -112,7 +167,7 @@ export default function CheckboxReactHookFormSingle() {
         <TabsTrigger
           value="result"
           onClick={() => setTab("result")}
-          disabled={progress !== "success"}
+          disabled={!sortedResult || sortedResult?.length === 0}
         >
           {t("result")}
         </TabsTrigger>
@@ -168,10 +223,8 @@ export default function CheckboxReactHookFormSingle() {
             <div className="flex justify-center md:col-span-2">
               <LoadingButton
                 type="submit"
-                disabled={!allAnswered}
-                isLoading={
-                  progress === "extracting" || progress === "translating"
-                }
+                disabled={!allAnswered || isLoading}
+                isLoading={isLoading}
                 loadingText={loadingText()}
               >
                 {t("submit")}
@@ -209,12 +262,12 @@ export default function CheckboxReactHookFormSingle() {
               }}
             >
               <div className="rounded-md bg-white px-2 py-1 text-sm font-bold shadow-md">
-                {item.type}&nbsp;({item.percentage}%)
+                {item.originalData.type}&nbsp;({item.percentage}%)
               </div>
               <Image
                 className="mt-2 size-24 rounded-2xl border-[6px] border-white object-cover shadow-xl md:size-36"
-                src={`/mbti/${item.type.toUpperCase()}.png`}
-                alt={item.type}
+                src={`/mbti/${item.originalData.type.toUpperCase()}.png`}
+                alt={item.originalData.type}
                 width={150}
                 height={150}
               />
