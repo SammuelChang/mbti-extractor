@@ -1,39 +1,67 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useRef, useState } from "react";
+import { useSentimentWorker } from "@/hooks/use-sentiment-worker";
+import { useState } from "react";
+
+const getStatusMessage = (workerStatus: string) => {
+  switch (workerStatus) {
+    case "idle":
+      return "Worker not started";
+    case "initializing":
+      return "Initializing worker...";
+    case "ready":
+      return "Worker ready";
+    case "processing":
+      return "Processing message...";
+    case "complete":
+      return "Processing complete!";
+    case "error":
+      return "Worker error";
+    default:
+      return "Unknown status";
+  }
+};
+
+const getStatusColor = (workerStatus: string) => {
+  switch (workerStatus) {
+    case "complete":
+      return "text-green-500";
+    case "error":
+      return "text-red-500";
+    case "processing":
+      return "text-yellow-500";
+    default:
+      return "text-gray-500";
+  }
+};
 
 export default function Test() {
-  const workerRef = useRef<Worker | null>(null);
   const [message, setMessage] = useState("");
-  const [result, setResult] = useState("");
+  const { result, sendMessage, workerStatus } = useSentimentWorker();
 
-  useEffect(() => {
-    workerRef.current = new Worker(
-      new URL("../../workers/sentiment.js", import.meta.url)
-    );
-    workerRef.current.onmessage = (event) => {
-      if (event.data.status === "complete") {
-        setResult(event.data);
-      }
-    };
-    return () => {
-      workerRef.current?.terminate();
-    };
-  }, []);
-
-  const sendMessage = () => {
-    workerRef.current?.postMessage(message);
+  const handleSendMessage = () => {
+    sendMessage(message);
   };
 
   return (
     <div className="flex flex-col gap-4">
+      <div className={`text-sm ${getStatusColor(workerStatus)}`}>
+        Status: {getStatusMessage(workerStatus)}
+      </div>
       <Input
         type="text"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        disabled={workerStatus === "processing"}
       />
-      <Button onClick={sendMessage}>Send Message to Worker</Button>
+      <Button
+        onClick={handleSendMessage}
+        disabled={workerStatus === "processing" || workerStatus === "error"}
+      >
+        Send Message to Worker
+      </Button>
       <div>{JSON.stringify(message)}</div>
       <div>{JSON.stringify(result)}</div>
     </div>
