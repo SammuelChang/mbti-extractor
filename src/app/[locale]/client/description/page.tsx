@@ -9,6 +9,8 @@ import { useLocale, useTranslations } from "next-intl";
 import LoadingButton from "@/app/components/loading-button";
 import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
 import { mbtiList } from "../../../../../data/mbti-list";
+import { useTranslationWorker } from "@/hooks/use-translation-worker";
+import { isContainChinese } from "@/lib/utils";
 
 const placeholderList = [
   "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
@@ -23,13 +25,10 @@ const placeholderListZhTW = [
 ];
 
 function getLocalePlaceholder(locale: string) {
-  if (locale === "en") {
-    return placeholderList;
-  } else if (locale === "zh-TW") {
+  if (locale === "zh-TW") {
     return placeholderListZhTW;
-  } else {
-    return placeholderList;
   }
+  return placeholderList;
 }
 
 export default function Describe() {
@@ -38,25 +37,32 @@ export default function Describe() {
   const [placeholder, setPlaceholder] = useState<string>(
     getLocalePlaceholder(locale)[0]
   );
-  const { result, sendMessage, workerStatus } = useEmbeddingWorker();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentInput, setCurrentInput] = useState<string>("");
 
-  const sortedResult = result?.output?.similarResults?.sort(
+  const {
+    result: translResult,
+    sendMessage: sendTranslMessage,
+    workerStatus: translStatus,
+  } = useTranslationWorker();
+
+  const {
+    result: embeddingResult,
+    sendMessage: sendEmbeddingMessage,
+    workerStatus: embeddingStatus,
+  } = useEmbeddingWorker();
+
+  const sortedResult = embeddingResult?.output?.similarResults?.sort(
     (a, b) => b.similarity - a.similarity
   );
 
-  async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  // 監聽翻譯結果
+  useEffect(() => {
+    if (translStatus === "complete" && translResult && currentInput) {
+      const translatedText = translResult.output[0].translation_text;
+      const sanitizedInputValue = DOMPurify.sanitize(translatedText);
 
-    try {
-      const inputValue = (
-        e.currentTarget.elements.namedItem("inputField") as HTMLInputElement
-      ).value;
-
-      if (!inputValue) {
-        throw new Error("Input value is empty");
-      }
-      const sanitizedInputValue = DOMPurify.sanitize(inputValue);
-      sendMessage({
+      sendEmbeddingMessage({
         array: [
           {
             type: null,
@@ -66,8 +72,53 @@ export default function Describe() {
         ],
         pathParam: "trait",
       });
+    }
+  }, [translStatus, translResult, sendEmbeddingMessage]);
+
+  useEffect(() => {
+    if (
+      embeddingStatus === "complete" ||
+      translStatus === "error" ||
+      embeddingStatus === "error"
+    ) {
+      setIsProcessing(false);
+      setCurrentInput("");
+    }
+  }, [embeddingStatus, translStatus]);
+
+  async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsProcessing(true);
+
+    try {
+      const inputValue = (
+        e.currentTarget.elements.namedItem("inputField") as HTMLInputElement
+      ).value;
+
+      if (!inputValue) {
+        throw new Error("Input value is empty");
+      }
+
+      setCurrentInput(inputValue);
+
+      if (isContainChinese(inputValue)) {
+        sendTranslMessage(inputValue);
+      } else {
+        const sanitizedInputValue = DOMPurify.sanitize(inputValue);
+        sendEmbeddingMessage({
+          array: [
+            {
+              type: null,
+              trait: sanitizedInputValue,
+            },
+            ...mbtiList,
+          ],
+          pathParam: "trait",
+        });
+      }
     } catch (error) {
       console.error(error);
+      setIsProcessing(false);
     }
   }
 
@@ -78,7 +129,10 @@ export default function Describe() {
       index = (index + 1) % getLocalePlaceholder(locale).length;
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [locale]);
+
+  const isLoading =
+    isProcessing || !["ready", "complete"].includes(embeddingStatus);
 
   return (
     <>
@@ -91,16 +145,19 @@ export default function Describe() {
           className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
           placeholder={placeholder}
           autoComplete="off"
+          disabled={isProcessing}
         />
 
         <LoadingButton
           type="submit"
-          isLoading={!["ready", "complete"].includes(workerStatus)}
+          isLoading={isLoading}
           loadingText="loading..."
+          disabled={isProcessing}
         >
           {t("submit")}
         </LoadingButton>
       </form>
+
       <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
         {sortedResult?.slice(0, 3).map((item: any, index: number) => (
           <motion.div
