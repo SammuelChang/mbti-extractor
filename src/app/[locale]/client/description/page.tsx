@@ -35,6 +35,12 @@ const placeholderListZhTW = [
   "喜愛深度對話，注重全局，兼顧理性與感性，樂於接受變化。",
 ];
 
+const EnglishOnlyPrompt = () => (
+  <div className="font-bold text-sm bg-accent px-4 py-2 rounded-md">
+    目前暫時僅接受英文與數字輸入
+  </div>
+);
+
 function getLocalePlaceholder(locale: string) {
   if (locale === "zh-TW") {
     return placeholderListZhTW;
@@ -45,8 +51,31 @@ function getLocalePlaceholder(locale: string) {
 const FormSchema = z.object({
   inputField: z
     .string()
-    .min(2, { message: "Please enter at least 2 characters" }),
+    .min(2, { message: "Please enter at least 2 characters" })
+    .regex(/^[a-zA-Z0-9 _-]*$/, {
+      message:
+        "Only alphanumeric characters, spaces, underscores, and hyphens are allowed",
+    }),
 });
+
+function keydownHandler(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+  // 允許功能鍵的使用（如 Backspace、Enter、方向鍵等）
+  if (event.key.length === 1 && !/^[a-zA-Z0-9 _-]$/.test(event.key)) {
+    event.preventDefault();
+  }
+}
+
+function inputChangeHandler(event: React.ChangeEvent<HTMLTextAreaElement>) {
+  const value = event.target.value;
+  const regex = /^[a-zA-Z0-9 _-]*$/;
+
+  // 只有當新輸入的值不符合規則時才進行過濾
+  if (!regex.test(value)) {
+    // 保留所有英數字符
+    event.target.value = value.replace(/[^a-zA-Z0-9 _-]/g, "");
+  }
+  // 如果符合規則，保持原值不變
+}
 
 export default function Describe() {
   const locale = useLocale();
@@ -69,6 +98,7 @@ export default function Describe() {
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
+    // mode: "onChange",
     defaultValues: {
       inputField: "",
     },
@@ -118,9 +148,6 @@ export default function Describe() {
     return () => clearInterval(interval);
   }, [locale]);
 
-  const isLoading =
-    isProcessing || !["ready", "complete"].includes(embeddingStatus);
-
   return (
     <Tabs value={tab} className="flex flex-col items-center gap-4">
       <TabsList>
@@ -141,6 +168,7 @@ export default function Describe() {
             className="flex gap-2 items-center mb-4 z-10 flex-col"
             onSubmit={form.handleSubmit(submitHandler)}
           >
+            {locale === "zh-TW" && <EnglishOnlyPrompt />}
             <FormField
               control={form.control}
               name="inputField"
@@ -153,6 +181,11 @@ export default function Describe() {
                       placeholder={placeholder}
                       autoComplete="off"
                       disabled={isProcessing}
+                      onKeyDown={keydownHandler}
+                      onChange={(e) => {
+                        inputChangeHandler(e);
+                        field.onChange(e); // 確保 React Hook Form 能獲得更新後的值
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -161,9 +194,10 @@ export default function Describe() {
             />
             <LoadingButton
               type="submit"
-              isLoading={isLoading}
-              loadingText={t("extracting")}
               disabled={isProcessing || !form.formState.isValid}
+              isLoading={isProcessing}
+              loadingText={t("extracting")}
+              className="mt-8"
             >
               {t("submit")}
             </LoadingButton>

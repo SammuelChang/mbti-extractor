@@ -122,9 +122,6 @@ export default function CheckboxReactHookFormSingle() {
     }
   }
 
-  const isLoading =
-    isProcessing || !["ready", "complete"].includes(embeddingStatus);
-
   return (
     <Tabs value={tab} className="flex flex-col items-center gap-4">
       <TabsList>
@@ -191,9 +188,10 @@ export default function CheckboxReactHookFormSingle() {
             <div className="flex justify-center md:col-span-2">
               <LoadingButton
                 type="submit"
-                disabled={!allAnswered || isLoading}
-                isLoading={isLoading}
+                disabled={!allAnswered || isProcessing}
+                isLoading={isProcessing}
                 loadingText={t("extracting")}
+                className="mt-8"
               >
                 {t("submit")}
               </LoadingButton>
