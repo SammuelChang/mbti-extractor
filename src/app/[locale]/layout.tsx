@@ -26,7 +26,7 @@ export default async function LocaleLayout({
   return (
     <>
       <NextIntlClientProvider messages={messages}>
-        <div className="w-full absolute top-0 right-0 z-10 p-4 flex gap-4 items-center justify-between">
+        <div className="w-full z-10 p-4 flex gap-4 items-center justify-between">
           <Link href="/">
             <House />
           </Link>
