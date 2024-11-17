@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ImagesReveal from "../components/images-reveal";
 import { mbtiList } from "../../../data/mbti-list";
+import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
 
 const cards = mbtiList.map((item, index) => {
   return {
@@ -18,6 +19,11 @@ const cards = mbtiList.map((item, index) => {
 
 export default function Home() {
   const t = useTranslations("HomePage");
+  const {
+    result: embeddingResult,
+    sendMessage: sendEmbeddingMessage,
+    workerStatus: embeddingStatus,
+  } = useEmbeddingWorker();
 
   return (
     <>

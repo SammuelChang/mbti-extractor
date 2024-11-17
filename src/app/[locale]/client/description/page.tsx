@@ -194,7 +194,11 @@ export default function Describe() {
             />
             <LoadingButton
               type="submit"
-              disabled={isProcessing || !form.formState.isValid}
+              disabled={
+                embeddingStatus !== "ready" ||
+                isProcessing ||
+                !form.formState.isValid
+              }
               isLoading={isProcessing}
               loadingText={t("extracting")}
               className="mt-8"

@@ -188,7 +188,9 @@ export default function CheckboxReactHookFormSingle() {
             <div className="flex justify-center md:col-span-2">
               <LoadingButton
                 type="submit"
-                disabled={!allAnswered || isProcessing}
+                disabled={
+                  embeddingStatus !== "ready" || !allAnswered || isProcessing
+                }
                 isLoading={isProcessing}
                 loadingText={t("extracting")}
                 className="mt-8"
