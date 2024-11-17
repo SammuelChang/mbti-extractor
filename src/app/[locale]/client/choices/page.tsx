@@ -22,8 +22,6 @@ import LoadingButton from "@/app/components/loading-button";
 import DOMPurify from "dompurify";
 import { motion } from "framer-motion";
 import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
-import { useTranslationWorker } from "@/hooks/use-translation-worker";
-import { isContainChinese } from "@/lib/utils";
 import { mbtiList } from "../../../../../data/mbti-list";
 import { quizList } from "../../../../../data/quiz";
 
@@ -81,11 +79,6 @@ export default function CheckboxReactHookFormSingle() {
       }
     }
   }, [embeddingStatus]);
-
-  const loadingText = () => {
-    if (embeddingStatus === "processing") return t("extracting");
-    return t("submit");
-  };
 
   async function submitHandler(data: z.infer<typeof FormSchema>) {
     try {
@@ -200,7 +193,7 @@ export default function CheckboxReactHookFormSingle() {
                 type="submit"
                 disabled={!allAnswered || isLoading}
                 isLoading={isLoading}
-                loadingText={loadingText()}
+                loadingText={t("extracting")}
               >
                 {t("submit")}
               </LoadingButton>

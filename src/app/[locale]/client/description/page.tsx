@@ -9,8 +9,6 @@ import { useLocale, useTranslations } from "next-intl";
 import LoadingButton from "@/app/components/loading-button";
 import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
 import { mbtiList } from "../../../../../data/mbti-list";
-import { useTranslationWorker } from "@/hooks/use-translation-worker";
-import { isContainChinese } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const placeholderList = [
@@ -39,14 +37,7 @@ export default function Describe() {
     getLocalePlaceholder(locale)[0]
   );
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentInput, setCurrentInput] = useState<string>("");
   const [tab, setTab] = useState<"quiz" | "result">("quiz");
-
-  const {
-    result: translResult,
-    sendMessage: sendTranslMessage,
-    workerStatus: translStatus,
-  } = useTranslationWorker();
 
   const {
     result: embeddingResult,
@@ -58,38 +49,14 @@ export default function Describe() {
     (a, b) => b.similarity - a.similarity
   );
 
-  // 監聽翻譯結果
   useEffect(() => {
-    if (translStatus === "complete" && translResult && currentInput) {
-      const translatedText = translResult.output[0].translation_text;
-      const sanitizedInputValue = DOMPurify.sanitize(translatedText);
-
-      sendEmbeddingMessage({
-        array: [
-          {
-            type: null,
-            trait: sanitizedInputValue,
-          },
-          ...mbtiList,
-        ],
-        pathParam: "trait",
-      });
-    }
-  }, [translStatus, translResult, sendEmbeddingMessage]);
-
-  useEffect(() => {
-    if (
-      embeddingStatus === "complete" ||
-      translStatus === "error" ||
-      embeddingStatus === "error"
-    ) {
+    if (embeddingStatus === "complete" || embeddingStatus === "error") {
       setIsProcessing(false);
-      setCurrentInput("");
       if (embeddingStatus === "complete") {
         setTab("result");
       }
     }
-  }, [embeddingStatus, translStatus]);
+  }, [embeddingStatus]);
 
   async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -104,23 +71,17 @@ export default function Describe() {
         throw new Error("Input value is empty");
       }
 
-      setCurrentInput(inputValue);
-
-      if (isContainChinese(inputValue)) {
-        sendTranslMessage(inputValue);
-      } else {
-        const sanitizedInputValue = DOMPurify.sanitize(inputValue);
-        sendEmbeddingMessage({
-          array: [
-            {
-              type: null,
-              trait: sanitizedInputValue,
-            },
-            ...mbtiList,
-          ],
-          pathParam: "trait",
-        });
-      }
+      const sanitizedInputValue = DOMPurify.sanitize(inputValue);
+      sendEmbeddingMessage({
+        array: [
+          {
+            type: null,
+            trait: sanitizedInputValue,
+          },
+          ...mbtiList,
+        ],
+        pathParam: "trait",
+      });
     } catch (error) {
       console.error(error);
       setIsProcessing(false);
@@ -169,7 +130,7 @@ export default function Describe() {
           <LoadingButton
             type="submit"
             isLoading={isLoading}
-            loadingText="loading..."
+            loadingText={t("extracting")}
             disabled={isProcessing}
           >
             {t("submit")}
