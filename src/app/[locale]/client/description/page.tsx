@@ -10,6 +10,18 @@ import LoadingButton from "@/app/components/loading-button";
 import { useEmbeddingWorker } from "@/hooks/use-embedding-worker";
 import { mbtiList } from "../../../../../data/mbti-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const placeholderList = [
   "Gain energy from solitude, prefer facts, value logic, and enjoy structured plans.",
@@ -30,6 +42,12 @@ function getLocalePlaceholder(locale: string) {
   return placeholderList;
 }
 
+const FormSchema = z.object({
+  inputField: z
+    .string()
+    .min(2, { message: "Please enter at least 2 characters" }),
+});
+
 export default function Describe() {
   const locale = useLocale();
   const t = useTranslations("Form");
@@ -49,6 +67,13 @@ export default function Describe() {
     (a, b) => b.similarity - a.similarity
   );
 
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      inputField: "",
+    },
+  });
+
   useEffect(() => {
     if (embeddingStatus === "complete" || embeddingStatus === "error") {
       setIsProcessing(false);
@@ -58,19 +83,15 @@ export default function Describe() {
     }
   }, [embeddingStatus]);
 
-  async function submitHandler(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsProcessing(true);
-
+  async function submitHandler(data: z.infer<typeof FormSchema>) {
     try {
-      const inputValue = (
-        e.currentTarget.elements.namedItem("inputField") as HTMLInputElement
-      ).value;
+      const inputValue = data.inputField;
 
       if (!inputValue) {
         throw new Error("Input value is empty");
       }
 
+      setIsProcessing(true);
       const sanitizedInputValue = DOMPurify.sanitize(inputValue);
       sendEmbeddingMessage({
         array: [
@@ -115,27 +136,39 @@ export default function Describe() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="quiz">
-        <form
-          className="flex gap-2 items-center mb-4 z-10 flex-col"
-          onSubmit={submitHandler}
-        >
-          <Textarea
-            id="inputField"
-            className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
-            placeholder={placeholder}
-            autoComplete="off"
-            disabled={isProcessing}
-          />
-
-          <LoadingButton
-            type="submit"
-            isLoading={isLoading}
-            loadingText={t("extracting")}
-            disabled={isProcessing}
+        <Form {...form}>
+          <form
+            className="flex gap-2 items-center mb-4 z-10 flex-col"
+            onSubmit={form.handleSubmit(submitHandler)}
           >
-            {t("submit")}
-          </LoadingButton>
-        </form>
+            <FormField
+              control={form.control}
+              name="inputField"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      className="w-64 min-h-24 max-w-xs p-2 border border-gray-300 rounded"
+                      placeholder={placeholder}
+                      autoComplete="off"
+                      disabled={isProcessing}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <LoadingButton
+              type="submit"
+              isLoading={isLoading}
+              loadingText={t("extracting")}
+              disabled={isProcessing || !form.formState.isValid}
+            >
+              {t("submit")}
+            </LoadingButton>
+          </form>
+        </Form>
       </TabsContent>
       <TabsContent value="result">
         <div className="flex flex-col md:flex-row gap-4 pt-4 pb-8">
