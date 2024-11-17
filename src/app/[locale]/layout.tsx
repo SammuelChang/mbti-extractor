@@ -37,7 +37,7 @@ export default async function LocaleLayout({
             </Link>
           </div>
         </div>
-        <main className="pt-4">{children}</main>
+        <main className="pt-4 max-w-dvw">{children}</main>
       </NextIntlClientProvider>
     </>
   );
